@@ -1,0 +1,224 @@
+diff --git a/inference/run_react.py b/inference/run_react.py
+index 092dce0..99c3359 100644
+--- a/inference/run_react.py
++++ b/inference/run_react.py
+@@ -259,6 +259,129 @@ def setup_mcp_servers(
+     return config
+ 
+ 
++def _parse_text_tool_calls(content: str):
++    """Fallback for models (e.g. local Ollama models) that emit tool calls as
++    TEXT instead of native `tool_calls`. Scans content for JSON objects with
++    "name" and "arguments" and converts them into OpenAI-native tool_call dicts.
++    Returns [] if none found."""
++    import json as _json
++    import re as _re
++    import uuid as _uuid
++
++    if not content or not isinstance(content, str):
++        return []
++    candidates = []
++    # fenced ```json ... ``` or ``` ... ``` blocks
++    for m in _re.finditer(r"```(?:json)?\s*(\{.*?\})\s*```", content, _re.DOTALL):
++        candidates.append(m.group(1))
++    if not candidates:
++        # bare top-level object that looks like a tool call
++        m = _re.search(r"(\{.*\"name\".*\"arguments\".*\})", content, _re.DOTALL)
++        if m:
++            candidates.append(m.group(1))
++
++    calls = []
++    for raw in candidates:
++        try:
++            obj = _json.loads(raw)
++        except Exception:
++            continue
++        if not isinstance(obj, dict) or "name" not in obj:
++            continue
++        args = obj.get("arguments", {})
++        if not isinstance(args, str):
++            args = _json.dumps(args)
++        calls.append({
++            "id": "call_" + _uuid.uuid4().hex[:24],
++            "type": "function",
++            "function": {"name": obj["name"], "arguments": args},
++        })
++    return calls
++
++
++# Serving-uniform "text-tools" protocol. When enabled, tool schemas are rendered
++# into the prompt as plain text and the `tools=` API param is NOT sent, so that
++# every model/serving stack is treated identically (no native tool_calls, no
++# server-side tool gating). Tool calls are recovered from text by
++# _parse_text_tool_calls(). This removes the Ollama confound where some models
++# accept `tools=` (native or text) and others reject the request outright.
++TEXT_TOOLS = os.environ.get("LOCA_TEXT_TOOLS", "").strip().lower() not in ("", "0", "false", "no")
++
++# Control arm to separate the serving CHANNEL from the PROMPT. When LOCA_TOOL_HINT
++# is set, we inject the same plain-text tool list + call protocol into the prompt
++# BUT keep the native `tools=` param (unlike TEXT_TOOLS, which drops it). Comparing
++# native (no hint) vs native+hint vs text-tools isolates whether a fidelity gain
++# comes from the added prompt guidance or from disabling the native channel.
++TOOL_HINT = os.environ.get("LOCA_TOOL_HINT", "").strip().lower() not in ("", "0", "false", "no")
++
++# Constrained-decoding baseline. Like text-tools (text guidance, no native tools=)
++# but ALSO sends a JSON-schema response_format that forces the output to be a single
++# {"name": <one of the tool names>, "arguments": {...}} object, so parseability and
++# in-schema tool names are guaranteed by construction (grammar/schema-constrained
++# decoding via Ollama structured outputs). Tests whether the unparseable-text and
++# hallucinated-name failures are a property of the unconstrained interface.
++CONSTRAINED = os.environ.get("LOCA_CONSTRAINED", "").strip().lower() not in ("", "0", "false", "no")
++
++# Inject the text guidance whenever any of these modes want it.
++INJECT_TOOL_TEXT = TEXT_TOOLS or TOOL_HINT or CONSTRAINED
++# Drop the native tools= channel for the uniform text protocol and its constrained
++# variant (Ollama would otherwise gate/reject it per model).
++DROP_NATIVE_TOOLS = TEXT_TOOLS or CONSTRAINED
++
++
++def _tool_names(tools_list):
++    out = []
++    for t in (tools_list or []):
++        fn = t.get("function", t) if isinstance(t, dict) else {}
++        if fn.get("name"):
++            out.append(fn["name"])
++    return out
++
++
++def _render_tools_as_text(tools_list):
++    """Render OpenAI tool schemas as a plain-text tool list + a strict call
++    protocol, for the text-tools serving mode. Returns '' if no tools."""
++    if not tools_list:
++        return ""
++    lines = [
++        "You have access to the following tools. You can ONLY take an action by calling a tool.",
++        "",
++        "AVAILABLE TOOLS:",
++    ]
++    names = []
++    for t in tools_list:
++        fn = t.get("function", t) if isinstance(t, dict) else {}
++        name = fn.get("name", "")
++        names.append(name)
++        desc = (fn.get("description", "") or "").strip().replace("\n", " ")
++        params = fn.get("parameters", {}) or {}
++        props = params.get("properties", {}) or {}
++        required = set(params.get("required", []) or [])
++        lines.append(f"  * `{name}` -- {desc}")
++        if props:
++            lines.append("    arguments:")
++            for pname, pinfo in props.items():
++                pinfo = pinfo if isinstance(pinfo, dict) else {}
++                ptype = pinfo.get("type", "any")
++                req = "required" if pname in required else "optional"
++                pdesc = (pinfo.get("description", "") or "").strip().replace("\n", " ")
++                lines.append(f"      - {pname} ({ptype}, {req}): {pdesc}".rstrip())
++        else:
++            lines.append("    arguments: (none)")
++    lines += [
++        "",
++        "TOOL-CALL PROTOCOL:",
++        "To call a tool, respond with EXACTLY ONE JSON object and NOTHING else, in this form:",
++        "```json",
++        '{"name": "<tool_name>", "arguments": {<key>: <value>}}',
++        "```",
++        'The "name" field MUST be EXACTLY one of: ' + ", ".join(names) + ".",
++        "Do not invent tool names and do not add prose around the JSON.",
++        "After each tool call you will receive its result, then issue the next tool call.",
++    ]
++    return "\n".join(lines)
++
++
+ def make_aihubmix_api_request(
+     messages: List[Dict],
+     model_name: str,
+@@ -266,6 +389,7 @@ def make_aihubmix_api_request(
+     aihubmix_api_url: str = "https://aihubmix.com/v1/chat/completions",
+     tools: Optional[List] = None,
+     tool_choice: Optional[str] = None,
++    constrain_names: Optional[List[str]] = None,
+     max_retries: int = 200,
+     temperature: float = 1.0,
+     top_p: float = 1.0,
+@@ -613,6 +737,25 @@ def make_aihubmix_api_request(
+     if tool_choice:
+         json_data["tool_choice"] = tool_choice
+ 
++    # Constrained-decoding baseline: force the output to a single tool-call object
++    # with an enum-restricted name, so parseability + in-schema name are guaranteed.
++    if constrain_names:
++        json_data["response_format"] = {
++            "type": "json_schema",
++            "json_schema": {
++                "name": "tool_call",
++                "strict": True,
++                "schema": {
++                    "type": "object",
++                    "properties": {
++                        "name": {"type": "string", "enum": list(constrain_names)},
++                        "arguments": {"type": "object"},
++                    },
++                    "required": ["name", "arguments"],
++                },
++            },
++        }
++
+     # Track retry attempts
+     times = 0
+ 
+@@ -686,14 +829,24 @@ def make_aihubmix_api_request(
+                                 # Normal content response
+                                 content = message.get('content', '')
+ 
+-                                # Check if content is empty and no tool_calls
+-                                if not content or not content.strip():
++                                # Fallback: some models (e.g. local Ollama) emit tool
++                                # calls as TEXT instead of native tool_calls. Parse them.
++                                text_calls = _parse_text_tool_calls(content)
++                                if text_calls:
++                                    message['tool_calls'] = text_calls
++                                    result.extend(text_calls)
++                                    is_tool = True
+                                     if verbose:
+-                                        print(f"Received empty content without tool_calls. Retrying request...")
+-                                    should_retry = True
+-                                    break
+-                                
+-                                result.append(content)
++                                        print(f"Parsed {len(text_calls)} text-format tool call(s) from content")
++                                else:
++                                    # Check if content is empty and no tool_calls
++                                    if not content or not content.strip():
++                                        if verbose:
++                                            print(f"Received empty content without tool_calls. Retrying request...")
++                                        should_retry = True
++                                        break
++
++                                    result.append(content)
+                     
+                     # If we should retry, continue to the next iteration
+                     if should_retry:
+@@ -1267,6 +1420,13 @@ def run_single_task(
+             if verbose:
+                 print(f"[Task {task_id} | {task_label}] Context awareness enabled: Added token budget ({display_context_size}) and context management notice to user prompt")
+ 
++        # Append a plain-text tool list + call protocol to the prompt for either
++        # the text-tools mode (tools= dropped below) or the native+hint control arm.
++        if INJECT_TOOL_TEXT and tools:
++            tool_text = _render_tools_as_text(tools[0])
++            if tool_text:
++                enhanced_user_prompt = enhanced_user_prompt + "\n\n" + tool_text
++
+         messages = [{"role": "user", "content": enhanced_user_prompt}]
+         initial_user_message = {"role": "user", "content": enhanced_user_prompt}  # Save for context_summary
+         full_messages_history.append(initial_user_message.copy())  # Add initial user prompt to full history
+@@ -1305,7 +1465,8 @@ def run_single_task(
+                 model_name=model,
+                 aihubmix_api_keys=api_key,
+                 aihubmix_api_url=f"{base_url}/chat/completions",
+-                tools=tools[0] if tools else None,
++                tools=(None if DROP_NATIVE_TOOLS else (tools[0] if tools else None)),
++                constrain_names=(_tool_names(tools[0]) if (CONSTRAINED and tools) else None),
+                 max_retries=max_retries,
+                 temperature=1.0,
+                 top_p=1.0,

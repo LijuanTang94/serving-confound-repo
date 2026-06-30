@@ -1,0 +1,10 @@
+model,family,capability,fidelity,turns,ci_lo,ci_hi,seed_mean,rejected
+qwen2.5-coder:0.5b,qwen-coder,0.5,0.852,54,0.734,0.923,0.344,1
+qwen2.5-coder:1.5b,qwen-coder,0.885,0.955,110,0.898,0.98,0.742,1
+qwen2.5-coder:3b,qwen-coder,0.885,0.896,77,0.808,0.946,0.837,1
+qwen2.5-coder:7b,qwen-coder,0.885,0.889,36,0.747,0.956,0.912,0
+qwen2.5-coder:14b,qwen-coder,0.962,0.882,34,0.734,0.953,0.915,0
+gemma3:270m,other,0.385,0.375,8,0.137,0.694,0.375,4
+llama3.2:latest,other,0.615,0.467,15,0.248,0.699,0.438,0
+gemma3:4b,other,0.846,1.0,8,0.676,1.0,1.0,8
+phi3:latest,other,0.846,0.3,10,0.108,0.603,0.375,0

@@ -1,0 +1,236 @@
+{
+  "configurations": [
+    {
+      "name": "AggGrad-s42",
+      "env_class": "gem.envs.swe_aggregate_s2l.swe_aggregate_s2l.SweAggregateS2LEnv",
+      "env_params": {
+        "seed": 42,
+        "n_regions": 8
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    },
+    {
+      "name": "AggGrad-s123",
+      "env_class": "gem.envs.swe_aggregate_s2l.swe_aggregate_s2l.SweAggregateS2LEnv",
+      "env_params": {
+        "seed": 123,
+        "n_regions": 8
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    },
+    {
+      "name": "AggGrad-s456",
+      "env_class": "gem.envs.swe_aggregate_s2l.swe_aggregate_s2l.SweAggregateS2LEnv",
+      "env_params": {
+        "seed": 456,
+        "n_regions": 8
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    },
+    {
+      "name": "AggGrad-s789",
+      "env_class": "gem.envs.swe_aggregate_s2l.swe_aggregate_s2l.SweAggregateS2LEnv",
+      "env_params": {
+        "seed": 789,
+        "n_regions": 8
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    },
+    {
+      "name": "AggGrad-s2024",
+      "env_class": "gem.envs.swe_aggregate_s2l.swe_aggregate_s2l.SweAggregateS2LEnv",
+      "env_params": {
+        "seed": 2024,
+        "n_regions": 8
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    },
+    {
+      "name": "AggGrad-s7",
+      "env_class": "gem.envs.swe_aggregate_s2l.swe_aggregate_s2l.SweAggregateS2LEnv",
+      "env_params": {
+        "seed": 7,
+        "n_regions": 8
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    },
+    {
+      "name": "AggGrad-s99",
+      "env_class": "gem.envs.swe_aggregate_s2l.swe_aggregate_s2l.SweAggregateS2LEnv",
+      "env_params": {
+        "seed": 99,
+        "n_regions": 8
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    },
+    {
+      "name": "AggGrad-s2025",
+      "env_class": "gem.envs.swe_aggregate_s2l.swe_aggregate_s2l.SweAggregateS2LEnv",
+      "env_params": {
+        "seed": 2025,
+        "n_regions": 8
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    }
+  ]
+}

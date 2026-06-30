@@ -1,0 +1,10 @@
+model,capability
+gemma3:270m,0.385
+qwen2.5-coder:0.5b,0.5
+llama3.2:latest,0.615
+gemma3:4b,0.846
+phi3:latest,0.846
+qwen2.5-coder:1.5b,0.885
+qwen2.5-coder:3b,0.885
+qwen2.5-coder:7b,0.885
+qwen2.5-coder:14b,0.962
