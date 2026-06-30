@@ -1,0 +1,124 @@
+{
+  "configurations": [
+    {
+      "name": "ChainGradTT-s42",
+      "env_class": "gem.envs.swe_chain_s2l.swe_chain_s2l.SweChainS2LEnv",
+      "env_params": {
+        "seed": 42,
+        "n_decoys": 2,
+        "decoy_doc_tokens": 120
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    },
+    {
+      "name": "ChainGradTT-s123",
+      "env_class": "gem.envs.swe_chain_s2l.swe_chain_s2l.SweChainS2LEnv",
+      "env_params": {
+        "seed": 123,
+        "n_decoys": 2,
+        "decoy_doc_tokens": 120
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    },
+    {
+      "name": "ChainGradTT-s456",
+      "env_class": "gem.envs.swe_chain_s2l.swe_chain_s2l.SweChainS2LEnv",
+      "env_params": {
+        "seed": 456,
+        "n_decoys": 2,
+        "decoy_doc_tokens": 120
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    },
+    {
+      "name": "ChainGradTT-s789",
+      "env_class": "gem.envs.swe_chain_s2l.swe_chain_s2l.SweChainS2LEnv",
+      "env_params": {
+        "seed": 789,
+        "n_decoys": 2,
+        "decoy_doc_tokens": 120
+      },
+      "mcp_servers": {
+        "filesystem": {
+          "enabled": true,
+          "type": "filesystem",
+          "params": {
+            "workspace_path": "{agent_workspace}"
+          }
+        },
+        "python_execute": {
+          "enabled": true,
+          "type": "python_execute",
+          "params": {
+            "workspace_dir": "{agent_workspace}"
+          }
+        },
+        "claim_done": {
+          "enabled": true,
+          "type": "claim_done",
+          "params": {}
+        }
+      }
+    }
+  ]
+}

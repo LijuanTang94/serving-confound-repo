@@ -38,12 +38,15 @@ report per-seed rates with intervals.
 patches/run_react.serving.patch   our changes to LOCA-bench inference/run_react.py
 patches/LOCA-bench-base-commit.txt the upstream commit the patch applies to
 envs/swe_aggregate_s2l.py          the aggregation task environment (our addition)
-configs/agg_grad*.json             8-seed run configs (see below)
+envs/swe_chain_s2l/                the second task (dependency-chain) environment
+configs/agg_grad*.json             aggregation run configs (native / hint / text-tools / constrained)
+configs/chain_grad_tt.json         second-task (chain) text-tools config, 4 seeds
 analysis/analyze_protocol.py       per-turn outcome taxonomy -> protocol_gradient.png
 analysis/analyze_serving.py        3-condition per-seed fidelity -> serving_modes.png
+analysis/analyze_chain.py          second-task per-seed -> chain_compare.csv
 analysis/constrained_probe.py      single-turn constrained-decoding probe (Ollama)
 analysis/llamacpp_probe.py         single-turn cross-stack probe (llama.cpp)
-results/*.csv                      the numbers reported in the paper
+results/*.csv                      the numbers reported in the paper (incl. chain_compare.csv)
 figures/*.png                      the paper figures
 paper.pdf                          the paper
 ```
