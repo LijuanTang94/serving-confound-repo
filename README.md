@@ -1,4 +1,4 @@
-# Silent Serving-Layer Confounds in Measuring Tool-Call Protocol Fidelity of Small Local Coding Agents
+# Measuring the Serving Stack Instead of the Model: Hidden Confounds in Local Tool-Use Evaluation
 
 Code, configs, and data to reproduce the paper (`paper.pdf` in this repo).
 
@@ -15,9 +15,12 @@ standard measurement is silently contaminated by the **serving layer**:
    `tool_calls`, and others (Phi-3, Gemma-3) have the request **rejected with HTTP
    400**. The harness logs the rejection as an ordinary non-call turn, so a naive
    analysis scores a capable model at **0% even though it never ran**.
-2. **Cross-stack control.** The same GGUF weights that Ollama rejects **run on
-   llama.cpp** (`results/crossstack.csv`) — the rejection is the stack's policy, not
-   the model.
+2. **Cross-stack control (four stacks, handled differently).** The same weights that
+   Ollama rejects **run on llama.cpp**; **vLLM** refuses the same request *by default*
+   (needs `--enable-auto-tool-choice` + `--tool-call-parser`); **SGLang** instead
+   *accepts* it (HTTP 200) but returns the call as text unless `--tool-call-parser` is
+   set — so the two modern production stacks disagree on the default
+   (`results/crossstack.csv`). The outcome is the stack's policy, not the model.
 3. **Prompt vs channel.** For accepted models, keeping the native channel but adding
    a plain-text tool list + call format to the prompt recovers most of the fidelity;
    for Llama-3.2 (real native support) the uniform text protocol *lowers* it. The
@@ -46,6 +49,10 @@ analysis/analyze_serving.py        3-condition per-seed fidelity -> serving_mode
 analysis/analyze_chain.py          second-task per-seed -> chain_compare.csv
 analysis/constrained_probe.py      single-turn constrained-decoding probe (Ollama)
 analysis/llamacpp_probe.py         single-turn cross-stack probe (llama.cpp)
+analysis/vllm_probe.py             single-turn cross-stack probe (vLLM; needs a GPU)
+analysis/sglang_probe.py           single-turn cross-stack probe (SGLang; needs an sm_80+ GPU)
+analysis/bootstrap_ci.py           seed-level bootstrap 95% CIs + serving_modes figure
+analysis/humaneval_probe.py        3rd-task replication on HumanEval (auto-downloads data)
 results/*.csv                      the numbers reported in the paper (incl. chain_compare.csv)
 figures/*.png                      the paper figures
 paper.pdf                          the paper
@@ -112,14 +119,41 @@ python analysis/constrained_probe.py   # Ollama @ 11434, constrained decoding
 # cross-stack: start llama.cpp on the same GGUF, then:
 #   llama-server -m <gguf> --port 8081 --jinja
 python analysis/llamacpp_probe.py
+# cross-stack on vLLM (needs a GPU box; launches/tears down vllm serve per model):
+python analysis/vllm_probe.py          # default: Qwen-0.5B + Phi-3 (GPU)
+python analysis/sglang_probe.py        # SGLang; needs an sm_80+ GPU (not T4)
+# 3rd task: replicate gating + text-tools fidelity on HumanEval (single-turn, no loop):
+python analysis/humaneval_probe.py     # auto-downloads 6 HumanEval problems
 ```
 
 ## Notes / caveats
-- One aggregation task, one primary serving stack (Ollama); the cross-stack check
-  (llama.cpp) covers the **rejection mechanism**, not the full per-seed measurements.
+- Per-seed measurements come from Ollama on two agentic tasks (aggregation, 8 seeds;
+  dependency-chain, 4 seeds) plus a single-turn HumanEval check. The cross-stack
+  comparison (llama.cpp, vLLM, SGLang) covers the **request-handling mechanism**, not
+  the full per-seed measurements; the vLLM and SGLang probes cover Qwen-0.5B and Phi-3
+  only.
 - `protocol fidelity = valid in-schema call rate over turns the model produced`
   (non-responses excluded from the denominator, reported separately).
-- See the paper's Threats section for the full list.
+- Numbers are pinned to **Ollama 0.30.8**. Which model tags are gated is a
+  release-level policy and can change between Ollama releases.
+- "seed" indexes a task instance, not a decoder RNG seed; decoding is sampled at
+  `T=1.0`, so per-seed rates do not reproduce to the digit.
+- See the paper's **Limitations** section for the full list.
+
+## Citation
+
+Accepted at the 2nd Workshop for Research on Agent Language Models (REALM) @ EMNLP
+2026 (archival). ACL Anthology entry to follow; until then:
+
+```bibtex
+@inproceedings{tang2026serving,
+  title     = {Measuring the Serving Stack Instead of the Model: Hidden Confounds in Local Tool-Use Evaluation},
+  author    = {Tang, Lijuan and Zheng, Yuemeng},
+  booktitle = {Proceedings of the 2nd Workshop for Research on Agent Language Models (REALM)},
+  year      = {2026},
+  note      = {To appear},
+}
+```
 
 ## License
 MIT (this repo's code/configs/analysis). LOCA-bench and the models are under their
