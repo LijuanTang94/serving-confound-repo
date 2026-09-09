@@ -1,5 +1,6 @@
-model,ollama_tools,llamacpp_tools
-phi3,HTTP400_rejected,200_runs_text
-gemma3:270m,HTTP400_rejected,200_runs_text
-qwen2.5-coder:0.5b,200_text,200_text
-llama3.2,200_native,200_native
+model,ollama_tools,llamacpp_tools,vllm_default,vllm_configured,sglang_default
+qwen2.5-coder:0.5b,200_text,200_text,HTTP400_no_parser,200_text_json_block,200_text_json_block
+llama3.2,200_native,200_native,HTTP400_no_parser,not_probed,not_probed
+phi3,HTTP400_rejected,200_runs_text,HTTP400_no_parser,200_prose_nocall,200_text_prose
+gemma3:270m,HTTP400_rejected,200_runs_text,not_probed,not_probed,not_probed
+gemma2:2b,n/a,n/a,HTTP400_no_parser,not_probed,not_probed

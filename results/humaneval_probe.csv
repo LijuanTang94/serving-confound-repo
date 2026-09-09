@@ -1,0 +1,8 @@
+model,native_gating,text_tools_valid,n,text_tools_rate
+qwen2.5-coder:0.5b,200_text,4,6,0.667
+qwen2.5-coder:1.5b,-,5,6,0.833
+qwen2.5-coder:3b,-,6,6,1.000
+llama3.2:latest,200_text,6,6,1.000
+phi3:latest,HTTP400_rejected,4,6,0.667
+gemma3:4b,-,2,6,0.333
+gemma3:270m,HTTP400_rejected,0,6,0.000
