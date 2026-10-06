@@ -1,5 +1,8 @@
 # Measuring the Serving Stack Instead of the Model: Hidden Confounds in Local Tool-Use Evaluation
 
+**Paper:** [arXiv:2609.26693](https://arxiv.org/abs/2609.26693) · Lijuan Tang, Yuemeng Zheng ·
+REALM Workshop @ EMNLP 2026 (archival, poster)
+
 Code, configs, and data to reproduce the paper (`paper.pdf` in this repo).
 
 ## TL;DR
@@ -143,15 +146,19 @@ python analysis/humaneval_probe.py     # auto-downloads 6 HumanEval problems
 ## Citation
 
 Accepted at the 2nd Workshop for Research on Agent Language Models (REALM) @ EMNLP
-2026 (archival). ACL Anthology entry to follow; until then:
+2026 (archival). Preprint: [arXiv:2609.26693](https://arxiv.org/abs/2609.26693). ACL Anthology
+entry to follow; until then:
 
 ```bibtex
 @inproceedings{tang2026serving,
-  title     = {Measuring the Serving Stack Instead of the Model: Hidden Confounds in Local Tool-Use Evaluation},
-  author    = {Tang, Lijuan and Zheng, Yuemeng},
-  booktitle = {Proceedings of the 2nd Workshop for Research on Agent Language Models (REALM)},
-  year      = {2026},
-  note      = {To appear},
+  title         = {Measuring the Serving Stack Instead of the Model: Hidden Confounds in Local Tool-Use Evaluation},
+  author        = {Tang, Lijuan and Zheng, Yuemeng},
+  booktitle     = {Proceedings of the 2nd Workshop for Research on Agent Language Models (REALM)},
+  year          = {2026},
+  eprint        = {2609.26693},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  note          = {To appear},
 }
 ```
 
