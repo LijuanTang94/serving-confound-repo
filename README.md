@@ -1,12 +1,19 @@
 # Measuring the Serving Stack Instead of the Model: Hidden Confounds in Local Tool-Use Evaluation
 
 **Paper:** [ACL Anthology](https://aclanthology.org/2026.realm-1.7/) ·
-[arXiv:2609.26693](https://arxiv.org/abs/2609.26693) · Lijuan Tang, Yuemeng Zheng ·
-REALM Workshop @ EMNLP 2026 (archival, poster)
+[arXiv:2609.26693](https://arxiv.org/abs/2609.26693) ·
+[Hugging Face Papers](https://huggingface.co/papers/2609.26693) · Lijuan Tang, Yuemeng Zheng ·
+REALM Workshop @ EMNLP 2026 (archival, poster) · DOI
+[10.18653/2026.realm-1.7](https://doi.org/10.18653/2026.realm-1.7)
 
 Code, configs, and data to reproduce the paper (`paper.pdf` in this repo). The result
 tables are also on the Hugging Face Hub:
 [SandyTang/serving-confound-results](https://huggingface.co/datasets/SandyTang/serving-confound-results).
+
+**In one sentence:** when you evaluate tool calling (function calling) on local LLMs,
+the serving stack (Ollama, llama.cpp, vLLM, SGLang) can refuse the `tools=` request or
+return the call as plain text, so a reported tool-call rate, including a 0%, may measure
+the server rather than the model.
 
 ![Per-seed protocol fidelity under three serving conditions](figures/serving_modes.png)
 
@@ -43,39 +50,106 @@ support them at this precision. The deliverable is a measurement checklist: hold
 serving interface fixed, separate a refused/empty request from a model non-call, and
 report per-seed rates with intervals.
 
-## Symptoms this explains
+## When this paper is relevant
 
-If you evaluate tool calling (function calling) on local models and see one of these,
-the serving layer may be what you are measuring:
+Cite or consult this work if you:
 
-- **Ollama returns HTTP 400 `does not support tools`** for Phi-3 or Gemma-3 when the
-  request carries `tools=`. Ollama decides this per model from a template flag before
-  inference; the same GGUF weights run on llama.cpp (`llama-server --jinja`).
-- **A model scores 0% tool-call rate but its logs are empty.** The harness may have
-  recorded a refused request (e.g. `"Failed to get response after multiple retries."`)
-  as an ordinary non-call turn. The model never ran, so the rate is undefined, not 0%.
-- **vLLM rejects `tools=` with HTTP 400 out of the box** (every model we probed). Tool
-  parsing is enabled at launch (`--enable-auto-tool-choice --tool-call-parser ...`),
-  not per model.
-- **SGLang returns HTTP 200 but the tool call arrives as text** instead of
-  `tool_calls` when `--tool-call-parser` is not set.
-- **Native tool-call fidelity looks low for small models.** Adding a plain-text tool
-  list and call format to the prompt, while keeping `tools=`, raised Qwen2.5-Coder
-  0.5B–14B from 0/38/23/59/60% to 35/58/82/89/80% per seed.
-- **A text-only tool protocol makes Llama-3.2 worse** (82% native+hint vs 44% text-tools),
-  because it discards Llama-3.2's real native `tool_calls` support.
-- **Constrained (grammar/JSON-schema) decoding fixes parse errors but the agent loops
-  forever**: weak models are forced to call a tool every turn and never terminate.
-- **Pooled and per-instance success rates disagree by up to ~55 points**: one looping
-  episode can dominate a turn-pooled denominator.
+- report tool-calling or function-calling accuracy for models served locally through
+  Ollama, llama.cpp, vLLM, or SGLang, or through any OpenAI-compatible endpoint;
+- build or run an agent benchmark or harness and need to decide how to record a
+  refused, empty, or retry-exhausted request;
+- compare native function calling (`tools=`) against prompting mode (tools described
+  in the prompt), as in BFCL's two modes;
+- see a 0% tool-call rate for a model and want to rule out the serving layer before
+  blaming the model;
+- use constrained decoding (JSON schema / grammar) to force valid tool calls in an
+  agent loop;
+- choose between turn-pooled and per-episode success rates for agent evaluation.
 
-## Checklist for local tool-use evaluation
+## FAQ
 
-- [ ] Pin the serving stack and its version (gating policies change between releases).
-- [ ] For standardized model comparisons, hold the serving interface fixed across models.
-- [ ] Log refused, empty, and retry-exhausted requests as structured failures, separate
-      from model non-calls, and exclude them from the fidelity denominator.
-- [ ] Report per-instance (per-seed) rates with intervals, not only turn-pooled rates.
+**Why does Ollama return HTTP 400 "does not support tools"?**
+Ollama gates the `tools=` request per model using a flag in the model's chat template
+(exposed as `capabilities` in `/api/show`), before any inference. On Ollama 0.30.8,
+Phi-3 and Gemma-3 are rejected this way. The same GGUF weights accept the identical
+request on llama.cpp (`llama-server --jinja`), so the 400 reflects the server's policy,
+not the model's ability.
+
+**Why is my tool-call (function-calling) accuracy 0% for Phi-3 or Gemma-3?**
+If every request was refused, the model never ran and the rate is undefined, not 0%.
+Our harness wrote `"Failed to get response after multiple retries."` for each refused
+turn and stored it as an ordinary non-call, so a naive per-turn analysis reported 0%.
+Diagnose in order: (1) did the server refuse or empty the request (HTTP 4xx, retry
+exhaustion)? (2) is a tool-call parser configured for this stack and model? Only then
+attribute the failure to the model.
+
+**Why does vLLM reject `tools=` with "'auto' tool choice requires --enable-auto-tool-choice and --tool-call-parser"?**
+vLLM enables tool parsing at server launch, not per model, so with a default
+`vllm serve` the check fails before model dispatch (identical error for Qwen2.5-Coder-0.5B
+and Phi-3). With `--enable-auto-tool-choice --tool-call-parser hermes` the request is
+accepted, but for these two small models the call still did not surface as a native
+`tool_call`: Qwen-0.5B emitted a fenced JSON block the parser did not extract, and
+Phi-3 produced prose.
+
+**Why does SGLang return the tool call as text instead of `tool_calls`?**
+By default SGLang accepts the `tools=` request (HTTP 200) but returns the call in the
+message text unless launched with `--tool-call-parser` (confirmed on Qwen2.5-Coder-0.5B
+and Phi-3). vLLM and SGLang therefore disagree on default handling of the same request.
+
+**Should I send native `tools=` or describe the tools in the prompt?**
+It depends on the model. Keeping `tools=` and adding a plain-text tool list with an
+explicit JSON call format raised per-seed fidelity for Qwen2.5-Coder 0.5B/1.5B/3B/7B/14B
+from 0/38/23/59/60% to 35/58/82/89/80%. For Llama-3.2, native + hint reached 82% but a
+text-only protocol (no `tools=`) dropped it to 44%, because it discards Llama-3.2's
+native `tool_calls` support.
+No single serving configuration maximizes measured fidelity for every model.
+
+**Does constrained decoding (JSON schema / grammar) fix tool-call evaluation?**
+It removes parse failures by construction, but forcing a tool call every turn made weak
+models loop without terminating, so we use it only as a single-turn probe.
+
+**Should I report turn-pooled or per-episode tool-call rates?**
+Both, with intervals. In our runs they differ by up to about 55 points because one
+looping episode can dominate the turn-pooled denominator. We report per-seed means
+with seed-level bootstrap 95% CIs.
+
+**How is this different from BFCL?**
+BFCL already separates native FC from prompting mode and reports empty-turn and
+API-error categories. This work treats the serving interface itself as an experimental
+variable: it holds the stack fixed, reports a per-turn outcome composition, and
+isolates per-model request gating inside a local serving layer across four stacks.
+
+## A protocol for measuring local-agent tool use
+
+The checklist from the paper. **Measure:**
+
+1. For standardized model comparisons, hold the serving interface fixed across models,
+   and pin and report the stack and its version.
+2. Log a transport- or serving-level failure (rejected request, timeout, empty response)
+   as a distinct outcome, never as a model non-call.
+3. Report per-seed rates with intervals, not a single turn-pooled number.
+
+**Diagnose a 0% tool-call rate, in order:**
+
+1. Did the serving layer refuse or empty the request (HTTP 4xx, retry exhaustion)? If
+   so, the model never ran.
+2. Is a tool-call parser configured for this stack and model? An accepted request can
+   still surface the call as text.
+3. Only after (1) and (2) are ruled out, attribute the failure to the model.
+
+For a system-level evaluation (a deployable model and server), report the full
+model–server configuration (stack, version, tool-call parser) as part of the system.
+
+## Key terms
+
+- **Protocol fidelity**: valid in-schema tool calls over the turns the model actually
+  produced; refused requests and non-responses are reported separately.
+- **Request gating**: the serving layer accepting or refusing a `tools=` request based
+  on model metadata (for example a chat-template flag) rather than model output.
+- **Native FC vs prompting mode**: tools passed through the API's `tools` field and
+  parsed by the server, versus tools described in the prompt and parsed from text.
+- **Serving-layer confound**: a difference in measured agent behavior caused by the
+  serving stack or its configuration rather than by the model.
 
 ## Repository layout
 
