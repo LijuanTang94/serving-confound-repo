@@ -4,7 +4,9 @@
 [arXiv:2609.26693](https://arxiv.org/abs/2609.26693) · Lijuan Tang, Yuemeng Zheng ·
 REALM Workshop @ EMNLP 2026 (archival, poster)
 
-Code, configs, and data to reproduce the paper (`paper.pdf` in this repo).
+Code, configs, and data to reproduce the paper (`paper.pdf` in this repo). The result
+tables are also on the Hugging Face Hub:
+[SandyTang/serving-confound-results](https://huggingface.co/datasets/SandyTang/serving-confound-results).
 
 ![Per-seed protocol fidelity under three serving conditions](figures/serving_modes.png)
 
