@@ -1,9 +1,12 @@
 # Measuring the Serving Stack Instead of the Model: Hidden Confounds in Local Tool-Use Evaluation
 
-**Paper:** [arXiv:2609.26693](https://arxiv.org/abs/2609.26693) · Lijuan Tang, Yuemeng Zheng ·
+**Paper:** [ACL Anthology](https://aclanthology.org/2026.realm-1.7/) ·
+[arXiv:2609.26693](https://arxiv.org/abs/2609.26693) · Lijuan Tang, Yuemeng Zheng ·
 REALM Workshop @ EMNLP 2026 (archival, poster)
 
 Code, configs, and data to reproduce the paper (`paper.pdf` in this repo).
+
+![Per-seed protocol fidelity under three serving conditions](figures/serving_modes.png)
 
 ## TL;DR
 
@@ -37,6 +40,40 @@ We draw **no** conclusions about model scale, family, or reasoning; the data doe
 support them at this precision. The deliverable is a measurement checklist: hold the
 serving interface fixed, separate a refused/empty request from a model non-call, and
 report per-seed rates with intervals.
+
+## Symptoms this explains
+
+If you evaluate tool calling (function calling) on local models and see one of these,
+the serving layer may be what you are measuring:
+
+- **Ollama returns HTTP 400 `does not support tools`** for Phi-3 or Gemma-3 when the
+  request carries `tools=`. Ollama decides this per model from a template flag before
+  inference; the same GGUF weights run on llama.cpp (`llama-server --jinja`).
+- **A model scores 0% tool-call rate but its logs are empty.** The harness may have
+  recorded a refused request (e.g. `"Failed to get response after multiple retries."`)
+  as an ordinary non-call turn. The model never ran, so the rate is undefined, not 0%.
+- **vLLM rejects `tools=` with HTTP 400 out of the box** (every model we probed). Tool
+  parsing is enabled at launch (`--enable-auto-tool-choice --tool-call-parser ...`),
+  not per model.
+- **SGLang returns HTTP 200 but the tool call arrives as text** instead of
+  `tool_calls` when `--tool-call-parser` is not set.
+- **Native tool-call fidelity looks low for small models.** Adding a plain-text tool
+  list and call format to the prompt, while keeping `tools=`, raised Qwen2.5-Coder
+  0.5B–14B from 0/38/23/59/60% to 35/58/82/89/80% per seed.
+- **A text-only tool protocol makes Llama-3.2 worse** (82% native+hint vs 44% text-tools),
+  because it discards Llama-3.2's real native `tool_calls` support.
+- **Constrained (grammar/JSON-schema) decoding fixes parse errors but the agent loops
+  forever**: weak models are forced to call a tool every turn and never terminate.
+- **Pooled and per-instance success rates disagree by up to ~55 points**: one looping
+  episode can dominate a turn-pooled denominator.
+
+## Checklist for local tool-use evaluation
+
+- [ ] Pin the serving stack and its version (gating policies change between releases).
+- [ ] For standardized model comparisons, hold the serving interface fixed across models.
+- [ ] Log refused, empty, and retry-exhausted requests as structured failures, separate
+      from model non-calls, and exclude them from the fidelity denominator.
+- [ ] Report per-instance (per-seed) rates with intervals, not only turn-pooled rates.
 
 ## Repository layout
 
@@ -145,20 +182,29 @@ python analysis/humaneval_probe.py     # auto-downloads 6 HumanEval problems
 
 ## Citation
 
-Accepted at the 2nd Workshop for Research on Agent Language Models (REALM) @ EMNLP
-2026 (archival). Preprint: [arXiv:2609.26693](https://arxiv.org/abs/2609.26693). ACL Anthology
-entry to follow; until then:
+Published in the Proceedings of the 2nd Workshop for Research on Agent Language Models
+(REALM 2026) @ EMNLP 2026: [ACL Anthology](https://aclanthology.org/2026.realm-1.7/) ·
+preprint [arXiv:2609.26693](https://arxiv.org/abs/2609.26693).
 
 ```bibtex
-@inproceedings{tang2026serving,
-  title         = {Measuring the Serving Stack Instead of the Model: Hidden Confounds in Local Tool-Use Evaluation},
-  author        = {Tang, Lijuan and Zheng, Yuemeng},
-  booktitle     = {Proceedings of the 2nd Workshop for Research on Agent Language Models (REALM)},
-  year          = {2026},
-  eprint        = {2609.26693},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.CL},
-  note          = {To appear},
+@inproceedings{tang-zheng-2026-measuring,
+    title = "Measuring the Serving Stack Instead of the Model: Hidden Confounds in Local Tool-Use Evaluation",
+    author = "Tang, Lijuan  and
+      Zheng, Yuemeng",
+    editor = "Kamalloo, Ehsan  and
+      Gontier, Nicolas  and
+      Rozanov, Nikolai  and
+      Hashemzadeh, Maryam  and
+      Arora, Akhil",
+    booktitle = "Proceedings of the Second Workshop for {RE}search on Agent Language Models ({REALM} 2026)",
+    month = oct,
+    year = "2026",
+    address = "Budapest, Hungary",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2026.realm-1.7/",
+    doi = "10.18653/2026.realm-1.7",
+    pages = "86--94",
+    ISBN = "979-8-89176-485-9"
 }
 ```
 

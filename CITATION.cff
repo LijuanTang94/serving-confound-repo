@@ -1,0 +1,60 @@
+cff-version: 1.2.0
+message: "If you use this code or data, please cite the paper below."
+title: "Measuring the Serving Stack Instead of the Model: Code and Data"
+type: software
+license: MIT
+repository-code: "https://github.com/LijuanTang94/serving-confound-repo"
+authors:
+  - family-names: Tang
+    given-names: Lijuan
+  - family-names: Zheng
+    given-names: Yuemeng
+keywords:
+  - tool calling
+  - function calling
+  - LLM evaluation
+  - LLM agents
+  - Ollama
+  - vLLM
+  - SGLang
+  - llama.cpp
+preferred-citation:
+  type: conference-paper
+  title: "Measuring the Serving Stack Instead of the Model: Hidden Confounds in Local Tool-Use Evaluation"
+  authors:
+    - family-names: Tang
+      given-names: Lijuan
+    - family-names: Zheng
+      given-names: Yuemeng
+  collection-title: "Proceedings of the Second Workshop for REsearch on Agent Language Models (REALM 2026)"
+  conference:
+    name: "2nd Workshop for Research on Agent Language Models (REALM) @ EMNLP 2026"
+    city: "Budapest"
+    country: HU
+  publisher:
+    name: "Association for Computational Linguistics"
+  editors:
+    - family-names: Kamalloo
+      given-names: Ehsan
+    - family-names: Gontier
+      given-names: Nicolas
+    - family-names: Rozanov
+      given-names: Nikolai
+    - family-names: Hashemzadeh
+      given-names: Maryam
+    - family-names: Arora
+      given-names: Akhil
+  year: 2026
+  month: 10
+  start: 86
+  end: 94
+  isbn: "979-8-89176-485-9"
+  doi: "10.18653/2026.realm-1.7"
+  url: "https://aclanthology.org/2026.realm-1.7/"
+  identifiers:
+    - type: doi
+      value: "10.48550/arXiv.2609.26693"
+      description: "arXiv preprint DOI"
+    - type: other
+      value: "arXiv:2609.26693"
+      description: "arXiv preprint"
